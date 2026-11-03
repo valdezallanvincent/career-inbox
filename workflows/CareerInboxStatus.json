@@ -1,0 +1,144 @@
+{
+  "id": "CareerInboxStatus",
+  "name": "Career Inbox | Application status",
+  "nodes": [
+    {
+      "id": "64325fa9-5d12-5277-bd07-61c9c2e65b73",
+      "name": "Update application status",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "path": "career-inbox-status",
+        "formTitle": "Career Inbox \u2014 update status",
+        "formDescription": "Record what you did. This does not send an application or contact anyone.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Id",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Status",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "new"
+                  },
+                  {
+                    "option": "shortlisted"
+                  },
+                  {
+                    "option": "applied"
+                  },
+                  {
+                    "option": "interview"
+                  },
+                  {
+                    "option": "rejected"
+                  },
+                  {
+                    "option": "withdrawn"
+                  },
+                  {
+                    "option": "closed"
+                  },
+                  {
+                    "option": "excluded"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Note",
+              "fieldType": "textarea",
+              "requiredField": false
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "career-inbox-status"
+    },
+    {
+      "id": "0c7330ee-df08-522a-bc8c-c125ac47fed2",
+      "name": "Record status and audit event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5680/status",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({id:Number($json.Id),status:$json.Status,note:$json.Note || \"\"}) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "id": "3168e44f-b54d-5663-bb37-b30633199533",
+      "name": "Show result",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.3,
+      "position": [
+        600,
+        0
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Career Inbox result",
+        "completionMessage": "={{ $json.message || \"Could not complete this request. Check the execution error in n8n; no success is assumed.\" }}"
+      }
+    }
+  ],
+  "connections": {
+    "Update application status": {
+      "main": [
+        [
+          {
+            "node": "Record status and audit event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record status and audit event": {
+      "main": [
+        [
+          {
+            "node": "Show result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "none"
+  },
+  "active": false,
+  "pinData": {},
+  "tags": []
+}

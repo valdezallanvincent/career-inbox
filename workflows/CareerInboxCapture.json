@@ -1,0 +1,162 @@
+{
+  "id": "CareerInboxCapture",
+  "name": "Career Inbox | Capture and rank",
+  "nodes": [
+    {
+      "id": "a4ebf016-a8fd-5c22-9e41-fbcaff4ccfd8",
+      "name": "Capture job",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "path": "career-inbox-capture",
+        "formTitle": "Career Inbox \u2014 save a job",
+        "formDescription": "Paste a job you found. Scoring is rule-based; verify vacancy status yourself. HourlyUsd means USD per hour, not monthly salary.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Url",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Title",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Company",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Description",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "HourlyUsd",
+              "fieldType": "number",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Eligibility",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "unknown"
+                  },
+                  {
+                    "option": "yes"
+                  },
+                  {
+                    "option": "no"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "VacancyStatus",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "unverified"
+                  },
+                  {
+                    "option": "open"
+                  },
+                  {
+                    "option": "closed"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "career-inbox-capture"
+    },
+    {
+      "id": "5f873bc9-3feb-54b0-b60e-833e71d9f1f2",
+      "name": "Validate deduplicate and rank",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5680/jobs",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({url:$json.Url,title:$json.Title,company:$json.Company,description:$json.Description,hourlyUsd:($json.HourlyUsd === \"\" || $json.HourlyUsd == null) ? null : Number($json.HourlyUsd),eligibility:$json.Eligibility,vacancyStatus:$json.VacancyStatus}) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "id": "3168e44f-b54d-5663-bb37-b30633199533",
+      "name": "Show result",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.3,
+      "position": [
+        600,
+        0
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Career Inbox result",
+        "completionMessage": "={{ $json.message || \"Could not complete this request. Check the execution error in n8n; no success is assumed.\" }}"
+      }
+    }
+  ],
+  "connections": {
+    "Capture job": {
+      "main": [
+        [
+          {
+            "node": "Validate deduplicate and rank",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate deduplicate and rank": {
+      "main": [
+        [
+          {
+            "node": "Show result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "none"
+  },
+  "active": false,
+  "pinData": {},
+  "tags": []
+}
